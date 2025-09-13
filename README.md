@@ -33,7 +33,3 @@ Copy code
 pip install numpy opencv-python matplotlib
 vbnet
 Copy code
-
-That’s it—short, minimal, functional. Nothing extra to annoy the grader.  
-
-Want me to also trim it down to a **single Readme.txt style** (just run command + requirements, no folder tree)?
