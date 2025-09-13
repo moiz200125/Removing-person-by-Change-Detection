@@ -4,6 +4,9 @@ import numpy as np
 from utils.io_utils import read_frames, plot_frames,write_png
 from utils.backgroundmodel import compute_mean, compute_variance
 from utils.masking import compute_mask
+from utils.morphology import create_kernel, erode, dilate
+from utils.visualization import compare_morphological_ops
+
 
 def save_mean_and_variance(mean_frame: np.ndarray, var_frame: np.ndarray, out_dir: str):
     """
@@ -51,20 +54,39 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
     # Save mean/variance for report
     save_mean_and_variance(mean_frame, var_frame, output_folder)
 
-    # Step 4: Compute masks for multiple thresholds
+    # Step 4 + Step 5: Masks + Morphological cleaning
     thresholds = [2.0, 5.0, 8.0]
+    kernel_sizes = [5, 7, 11]
+
     for thr in thresholds:
         thr_dir = os.path.join(output_folder, f"thr_{thr}")
         os.makedirs(thr_dir, exist_ok=True)
+
         print(f"[INFO] Generating masks at threshold={thr}")
 
-        for i, frame in enumerate(frames[t:]):  # process frames after background window
+        for i, frame in enumerate(frames[t:]):
             mask = compute_mask(frame, mean_frame, var_frame,
                                 threshold=thr, min_std=1.0)
             save_path = os.path.join(thr_dir, f"mask_{i:04d}.{output_ext}")
             write_png(save_path, mask)
+            
+            if i == 0:  # only for first frame to avoid too many plots
+                compare_morphological_ops(mask, kernel_sizes=[5,7,11],
+                              save_path=os.path.join(thr_dir, "morph_comparison.png"))
 
-    print(f"[INFO] Mean/Variance + Masks saved under {output_folder}")
+            # Step 5: Morphological cleaning for each kernel size
+            for k in kernel_sizes:
+                kernel = create_kernel(k)
+
+                # erosion then dilation (opening)
+                eroded = erode(mask, kernel, iterations=1)
+                opened = dilate(eroded, kernel, iterations=1)
+
+                morph_dir = os.path.join(thr_dir, f"morph_{k}x{k}")
+                os.makedirs(morph_dir, exist_ok=True)
+
+                morph_path = os.path.join(morph_dir, f"mask_{i:04d}.{output_ext}")
+                write_png(morph_path, opened)
 
 
 if __name__ == "__main__":
