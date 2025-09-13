@@ -34,3 +34,36 @@ def compare_morphological_ops(mask: np.ndarray, kernel_sizes=[5,7,11], save_path
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"[INFO] Morphological comparison saved to {save_path}")
+
+
+
+def compare_mask_morph_cc(raw_mask, morph_mask, cc_mask, save_path):
+    """
+    Compare raw mask, morphologically cleaned mask, and CC-filtered mask side by side.
+
+    Args:
+        raw_mask (np.ndarray): binary mask before morph
+        morph_mask (np.ndarray): mask after erosion+dilation
+        cc_mask (np.ndarray): mask after largest CC filtering
+        save_path (str): where to save the comparison plot
+    """
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.imshow(raw_mask, cmap="gray")
+    plt.title("Raw Mask")
+    plt.axis("off")
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(morph_mask, cmap="gray")
+    plt.title("Morph Cleaned")
+    plt.axis("off")
+
+    plt.subplot(1, 3, 3)
+    plt.imshow(cc_mask, cmap="gray")
+    plt.title("Largest CC")
+    plt.axis("off")
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close()

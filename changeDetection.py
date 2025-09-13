@@ -5,7 +5,9 @@ from utils.io_utils import read_frames, plot_frames,write_png
 from utils.backgroundmodel import compute_mean, compute_variance
 from utils.masking import compute_mask
 from utils.morphology import create_kernel, erode, dilate
-from utils.visualization import compare_morphological_ops
+from utils.visualization import compare_morphological_ops, compare_mask_morph_cc
+from utils.connected_components import find_connected_components
+
 
 
 def save_mean_and_variance(mean_frame: np.ndarray, var_frame: np.ndarray, out_dir: str):
@@ -70,9 +72,10 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
             save_path = os.path.join(thr_dir, f"mask_{i:04d}.{output_ext}")
             write_png(save_path, mask)
             
-            if i == 0:  # only for first frame to avoid too many plots
-                compare_morphological_ops(mask, kernel_sizes=[5,7,11],
-                              save_path=os.path.join(thr_dir, "morph_comparison.png"))
+            # if i == 0:  # only for first frame to avoid too many plots
+            #     compare_morphological_ops(mask, kernel_sizes=[5,7,11],
+            #                   save_path=os.path.join(thr_dir, "morph_comparison.png"))
+                
 
             # Step 5: Morphological cleaning for each kernel size
             for k in kernel_sizes:
@@ -88,6 +91,27 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
                 morph_path = os.path.join(morph_dir, f"mask_{i:04d}.{output_ext}")
                 write_png(morph_path, opened)
 
+                 # Step 6: Connected Components (per kernel)
+                num_comps, labeled_mask, comp_info = find_connected_components(opened, connectivity=8)
+
+                if num_comps > 0:
+                    # keep only the largest component
+                    largest = max(comp_info, key=lambda c: c["area"])
+                    filtered = np.where(labeled_mask == largest["id"], 255, 0).astype(np.uint8)
+
+                    cc_dir = os.path.join(thr_dir, f"cc_{k}x{k}")
+                    os.makedirs(cc_dir, exist_ok=True)
+
+                    cc_path = os.path.join(cc_dir, f"mask_{i:04d}.{output_ext}")
+                    write_png(cc_path, filtered)
+
+                # # Save a side-by-side comparison (only once per threshold/kernel)
+                #     if i == 0:
+                #         comp_path = os.path.join(cc_dir, "comparison.png")
+                #         compare_mask_morph_cc(mask, opened, filtered, comp_path)    
+
+            
+                
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Motion Detection using Classical CV")
