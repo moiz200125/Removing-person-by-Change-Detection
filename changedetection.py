@@ -62,27 +62,50 @@ def plot_frames(frames: list, num_frames: int, save_name: str) -> None:
 
 import struct, zlib
 
-def write_png_gray(path: str, arr: np.ndarray) -> None:
+import struct, zlib
+import numpy as np
+
+def write_png(path: str, arr: np.ndarray) -> None:
     """
-    Write a grayscale image to PNG using zlib compression.
+    Save an image (grayscale or RGB) as PNG using zlib compression.
+    
     Args:
-        path (str): output file path
-        arr (np.ndarray): grayscale image (H,W) dtype uint8
+        path (str): Output file path
+        arr (np.ndarray): Image array
+                         - Grayscale: shape (H, W)
+                         - RGB: shape (H, W, 3)
+                         dtype must be uint8
     """
-    h, w = arr.shape
-    arr = arr.astype(np.uint8)
+    if arr.dtype != np.uint8:
+        raise ValueError("Input array must be uint8")
+
+    # Handle grayscale vs RGB
+    if arr.ndim == 2:   # grayscale
+        color_type = 0
+        h, w = arr.shape
+        stride = arr
+    elif arr.ndim == 3 and arr.shape[2] == 3:  # RGB
+        color_type = 2
+        h, w, _ = arr.shape
+        stride = arr.reshape(h, w*3)
+    else:
+        raise ValueError("Only grayscale (HxW) or RGB (HxWx3) supported")
 
     # PNG file signature
     png_sig = b'\x89PNG\r\n\x1a\n'
 
     def chunk(tag, data):
-        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag+data) & 0xffffffff)
+        return (struct.pack(">I", len(data)) + tag + data +
+                struct.pack(">I", zlib.crc32(tag+data) & 0xffffffff))
 
     # IHDR
-    ihdr = struct.pack(">IIBBBBB", w, h, 8, 0, 0, 0, 0)  # 8-bit depth, color type 0 (grayscale)
-    # IDAT (prefix each row with filter byte 0)
-    raw = b''.join(b'\x00' + arr[i].tobytes() for i in range(h))
+    bit_depth = 8
+    ihdr = struct.pack(">IIBBBBB", w, h, bit_depth, color_type, 0, 0, 0)
+
+    # IDAT: add filter byte 0 at start of each row
+    raw = b''.join(b'\x00' + stride[i].tobytes() for i in range(h))
     idat = zlib.compress(raw)
+
     # IEND
     iend = b''
 
