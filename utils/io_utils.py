@@ -1,8 +1,10 @@
 import os
 import re
+import cv2
+import re
 import numpy as np
 import struct, zlib
-from PIL import Image   
+from PIL import Image 
 import matplotlib.pyplot as plt
 
 def read_frames(path: str) -> np.ndarray:
@@ -110,3 +112,42 @@ def write_png(path: str, arr: np.ndarray) -> None:
 
     with open(path, "wb") as f:
         f.write(png)
+
+
+
+def save_masks_as_video(mask_folder, output_path, fps=25):
+    """
+    Collects PNG masks from a folder and saves them as an .mp4 video.
+
+    Args:
+        mask_folder (str): Folder with mask_XXXX.png files
+        output_path (str): Path to save output video (must end with .mp4)
+        fps (int): Frames per second
+    """
+    # collect and sort mask files
+    files = [f for f in os.listdir(mask_folder) if f.endswith(".png")]
+    files.sort(key=lambda x: int(re.findall(r'\d+', x)[-1]))  # numeric sort
+
+    if not files:
+        print(f"[WARN] No PNG files in {mask_folder}")
+        return
+
+    # open first image to get size
+    first_img = np.array(Image.open(os.path.join(mask_folder, files[0])))
+    H, W = first_img.shape[:2]
+
+    # video writer (grayscale converted to 3-channel for mp4)
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H), isColor=True)
+
+    for fname in files:
+        img = np.array(Image.open(os.path.join(mask_folder, fname)))
+
+        # ensure 3-channel
+        if img.ndim == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+        writer.write(img)
+
+    writer.release()
+    print(f"[INFO] Saved video: {output_path}")

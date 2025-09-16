@@ -1,3 +1,6 @@
+#Abdul Moiz
+#BSCS22031
+
 import os
 import argparse
 import numpy as np
@@ -7,6 +10,8 @@ from utils.masking import compute_mask
 from utils.morphology import create_kernel, erode, dilate
 from utils.visualization import compare_morphological_ops, compare_mask_morph_cc
 from utils.connected_components import find_connected_components
+from utils.alpha_blend import alpha_blend_sequence
+from utils.io_utils import save_masks_as_video
 
 
 
@@ -77,6 +82,7 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
             #                   save_path=os.path.join(thr_dir, "morph_comparison.png"))
                 
 
+
             # Step 5: Morphological cleaning for each kernel size
             for k in kernel_sizes:
                 kernel = create_kernel(k)
@@ -110,8 +116,34 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
                 #         comp_path = os.path.join(cc_dir, "comparison.png")
                 #         compare_mask_morph_cc(mask, opened, filtered, comp_path)    
 
-            
-                
+
+                # # Step 7: Alpha Blending (only for person datasets)
+                # if "person" in input_folder.lower():
+                #     print("[INFO] Running alpha blending for person removal...")
+                    
+                #     # prepare RGB frames (stack grayscale if needed)
+                #     frames_rgb = np.stack([frames]*3, axis=-1).astype(np.uint8) if frames.ndim == 3 else frames
+                    
+                #     # convert mean frame to RGB
+                #     mean_rgb = np.stack([mean_frame]*3, axis=-1).astype(np.uint8)
+
+                #     blended_frames = alpha_blend_sequence(frames_rgb, mean_rgb, t_start=t)
+
+                #     # save a few sample blended frames
+                #     blend_dir = os.path.join(output_folder, "alpha_blend")
+                #     os.makedirs(blend_dir, exist_ok=True)
+                #     for idx, bf in enumerate(blended_frames[:10]):  # save first 10 for report
+                #         out_path = os.path.join(blend_dir, f"blended_{idx:04d}.png")
+                #         write_png(out_path, bf)
+                    
+                #     print(f"[INFO] Alpha blending done, saved in {blend_dir}")
+                        
+                        
+        # inside loop for each threshold
+        video_out = os.path.join(thr_dir, f"masks_{thr}.mp4")
+        save_masks_as_video(thr_dir, video_out, fps=25)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Motion Detection using Classical CV")
