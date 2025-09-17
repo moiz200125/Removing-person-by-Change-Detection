@@ -53,8 +53,11 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
     print(f"[INFO] Preview frames saved to {plot_path}")
 
     # Step 3: Background model
-    t = 60 if "person3" in input_folder.lower() else 70
+    max_bg = 70
+    # t = 60 if "person3" in input_folder.lower() else 70                               #Used in person images
+    t = min(max_bg, len(frames) // 2)  # at most 70, but not more than half available frames
     print(f"[INFO] Using first {t} frames for background model")
+
     mean_frame = compute_mean(frames[:t])
     var_frame = compute_variance(frames[:t], mean_frame)
 
