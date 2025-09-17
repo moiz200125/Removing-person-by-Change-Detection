@@ -114,40 +114,63 @@ def write_png(path: str, arr: np.ndarray) -> None:
         f.write(png)
 
 
-
-def save_masks_as_video(mask_folder, output_path, fps=25):
-    """
-    Collects PNG masks from a folder and saves them as an .mp4 video.
-
-    Args:
-        mask_folder (str): Folder with mask_XXXX.png files
-        output_path (str): Path to save output video (must end with .mp4)
-        fps (int): Frames per second
-    """
-    # collect and sort mask files
-    files = [f for f in os.listdir(mask_folder) if f.endswith(".png")]
-    files.sort(key=lambda x: int(re.findall(r'\d+', x)[-1]))  # numeric sort
-
+def save_masks_as_video(folder, out_path, fps=25):
+    """Combine binary mask PNGs into an mp4 video."""
+    files = [f for f in os.listdir(folder) if f.endswith(".png") and "mask_" in f]  
     if not files:
-        print(f"[WARN] No PNG files in {mask_folder}")
+        print(f"[WARNING] No mask files found in {folder}")
         return
+    
+    files.sort(key=lambda x: int(re.findall(r'\d+', x)[-1]))  # sort by frame number
 
-    # open first image to get size
-    first_img = np.array(Image.open(os.path.join(mask_folder, files[0])))
-    H, W = first_img.shape[:2]
-
-    # video writer (grayscale converted to 3-channel for mp4)
+    # read first image to get size
+    first = cv2.imread(os.path.join(folder, files[0]), cv2.IMREAD_GRAYSCALE)
+    h, w = first.shape
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H), isColor=True)
+    writer = cv2.VideoWriter(out_path, fourcc, fps, (w, h), isColor=False)
 
     for fname in files:
-        img = np.array(Image.open(os.path.join(mask_folder, fname)))
-
-        # ensure 3-channel
-        if img.ndim == 2:
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-
+        img = cv2.imread(os.path.join(folder, fname), cv2.IMREAD_GRAYSCALE)
         writer.write(img)
-
     writer.release()
-    print(f"[INFO] Saved video: {output_path}")
+    print(f"[INFO] Saved video {out_path}")
+
+
+
+
+# def save_masks_as_video(mask_folder, output_path, fps=25):
+#     """
+#     Collects PNG masks from a folder and saves them as an .mp4 video.
+
+#     Args:
+#         mask_folder (str): Folder with mask_XXXX.png files
+#         output_path (str): Path to save output video (must end with .mp4)
+#         fps (int): Frames per second
+#     """
+#     # collect and sort mask files
+#     files = [f for f in os.listdir(mask_folder) if f.endswith(".png")]
+#     files.sort(key=lambda x: int(re.findall(r'\d+', x)[-1]))  # numeric sort
+
+#     if not files:
+#         print(f"[WARN] No PNG files in {mask_folder}")
+#         return
+
+#     # open first image to get size
+#     first_img = np.array(Image.open(os.path.join(mask_folder, files[0])))
+#     H, W = first_img.shape[:2]
+
+#     # video writer (grayscale converted to 3-channel for mp4)
+#     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+#     writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H), isColor=True)
+
+#     for fname in files:
+#         img = np.array(Image.open(os.path.join(mask_folder, fname)))
+
+#         # ensure 3-channel
+#         if img.ndim == 2:
+#             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+#         writer.write(img)
+
+#     writer.release()
+#     print(f"[INFO] Saved video: {output_path}")

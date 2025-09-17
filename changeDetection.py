@@ -111,34 +111,34 @@ def changeDetection(input_folder, output_folder, input_ext, output_ext, video_fo
                     cc_path = os.path.join(cc_dir, f"mask_{i:04d}.{output_ext}")
                     write_png(cc_path, filtered)
 
-                # # Save a side-by-side comparison (only once per threshold/kernel)
-                #     if i == 0:
-                #         comp_path = os.path.join(cc_dir, "comparison.png")
-                #         compare_mask_morph_cc(mask, opened, filtered, comp_path)    
+                # Save a side-by-side comparison (only once per threshold/kernel)
+                    if i == 0:
+                        comp_path = os.path.join(cc_dir, "comparison.png")
+                        compare_mask_morph_cc(mask, opened, filtered, comp_path)    
 
 
-                # # Step 7: Alpha Blending (only for person datasets)
-                # if "person" in input_folder.lower():
-                #     print("[INFO] Running alpha blending for person removal...")
+                # Step 7: Alpha Blending (only for person datasets)
+                if "person" in input_folder.lower():
+                    print("[INFO] Running alpha blending for person removal...")
                     
-                #     # prepare RGB frames (stack grayscale if needed)
-                #     frames_rgb = np.stack([frames]*3, axis=-1).astype(np.uint8) if frames.ndim == 3 else frames
+                    # prepare RGB frames (stack grayscale if needed)
+                    frames_rgb = np.stack([frames]*3, axis=-1).astype(np.uint8) if frames.ndim == 3 else frames
                     
-                #     # convert mean frame to RGB
-                #     mean_rgb = np.stack([mean_frame]*3, axis=-1).astype(np.uint8)
+                    # convert mean frame to RGB
+                    mean_rgb = np.stack([mean_frame]*3, axis=-1).astype(np.uint8)
 
-                #     blended_frames = alpha_blend_sequence(frames_rgb, mean_rgb, t_start=t)
+                    blended_frames = alpha_blend_sequence(frames_rgb, mean_rgb, t_start=t)
 
-                #     # save a few sample blended frames
-                #     blend_dir = os.path.join(output_folder, "alpha_blend")
-                #     os.makedirs(blend_dir, exist_ok=True)
-                #     for idx, bf in enumerate(blended_frames[:10]):  # save first 10 for report
-                #         out_path = os.path.join(blend_dir, f"blended_{idx:04d}.png")
-                #         write_png(out_path, bf)
+                    # save a few sample blended frames
+                    blend_dir = os.path.join(output_folder, "alpha_blend")
+                    os.makedirs(blend_dir, exist_ok=True)
+                    for idx, bf in enumerate(blended_frames[:10]):  # save first 10 for report
+                        out_path = os.path.join(blend_dir, f"blended_{idx:04d}.png")
+                        write_png(out_path, bf)
                     
-                #     print(f"[INFO] Alpha blending done, saved in {blend_dir}")
+                    print(f"[INFO] Alpha blending done, saved in {blend_dir}")
                         
-                        
+
         # inside loop for each threshold
         video_out = os.path.join(thr_dir, f"masks_{thr}.mp4")
         save_masks_as_video(thr_dir, video_out, fps=25)
